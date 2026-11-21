@@ -1,0 +1,158 @@
+# =============================================================================
+# CRUD de Categorías — REST Client
+# Todas las rutas requieren sesión iniciada (cookie HttpOnly access_token).
+# =============================================================================
+#
+# Extensión requerida: REST Client (Huachao Mao) para VS Code.
+#
+# Preparación:
+#   1. uvicorn app.main:app --reload
+#   2. python -m app.db.seed          ← crea los usuarios admin y juan
+#
+# Sesión: el login del bloque 2 guarda la cookie access_token y REST Client
+# la envía sola en las peticiones siguientes. No hay que copiar ningún token.
+# Los casos "sin sesión" se ejecutan antes del login (bloque 1) o después del
+# logout (bloque 7).
+#
+# Convención:
+#   "Esperado"       = respuesta exitosa
+#   "Error esperado" = el comportamiento correcto es ese error
+# =============================================================================
+
+@baseUrl       = http://localhost:8000
+@authApi       = {{baseUrl}}/api/v1/auth
+@categoriasApi = {{baseUrl}}/api/v1/categorias
+
+
+# =============================================================================
+# BLOQUE 1 — Lectura pública y escritura con sesión
+# =============================================================================
+
+### 1a. Esperado: Listar sin sesión → 200
+GET {{categoriasApi}}
+
+### 1b. Error esperado: Crear sin sesión → 401
+POST {{categoriasApi}}
+Content-Type: application/json
+
+{ "nombre": "Sin sesión", "descripcion": "No debería crearse" }
+
+
+# =============================================================================
+# BLOQUE 2 — Login (guarda la cookie)
+# =============================================================================
+
+### 2. Esperado: Login → 200 + cookie access_token
+POST {{authApi}}/token
+Content-Type: application/x-www-form-urlencoded
+
+username=admin&password=Admin1234!
+
+
+# =============================================================================
+# BLOQUE 3 — Crear (POST /)
+# =============================================================================
+
+### 3a. Esperado: Crear "Electrónica" → 201
+POST {{categoriasApi}}
+Content-Type: application/json
+
+{ "nombre": "Electrónica", "descripcion": "Dispositivos y gadgets" }
+
+### 3b. Esperado: Crear "Ropa" → 201
+POST {{categoriasApi}}
+Content-Type: application/json
+
+{ "nombre": "Ropa", "descripcion": "Indumentaria y calzado" }
+
+### 3c. Esperado: Crear "Hogar" → 201
+POST {{categoriasApi}}
+Content-Type: application/json
+
+{ "nombre": "Hogar", "descripcion": "Muebles y decoración" }
+
+### 3d. Esperado: Crear "Deportes" → 201
+POST {{categoriasApi}}
+Content-Type: application/json
+
+{ "nombre": "Deportes", "descripcion": "Equipamiento deportivo" }
+
+### 3e. Error esperado: Nombre repetido → 409 Conflict
+POST {{categoriasApi}}
+Content-Type: application/json
+
+{ "nombre": "Electrónica", "descripcion": "Duplicada" }
+
+### 3f. Error esperado: Nombre vacío → 422
+POST {{categoriasApi}}
+Content-Type: application/json
+
+{ "nombre": "", "descripcion": "Sin nombre" }
+
+
+# =============================================================================
+# BLOQUE 4 — Leer (GET)
+# =============================================================================
+
+### 4a. Esperado: Listar todas → 200
+GET {{categoriasApi}}
+
+### 4b. Esperado: Obtener por ID (ajustar el ID según 4a) → 200
+GET {{categoriasApi}}/1
+
+### 4c. Error esperado: ID inexistente → 404
+GET {{categoriasApi}}/999
+
+
+# =============================================================================
+# BLOQUE 5 — Actualizar (PUT, parcial)
+# =============================================================================
+
+### 5a. Esperado: Cambiar solo el nombre → 200
+PUT {{categoriasApi}}/3
+Content-Type: application/json
+
+{ "nombre": "Hogar y jardín" }
+
+### 5b. Esperado: Cambiar solo la descripción → 200
+PUT {{categoriasApi}}/1
+Content-Type: application/json
+
+{ "descripcion": "Celulares, computadoras y accesorios" }
+
+### 5c. Error esperado: Nombre que ya existe → 409
+PUT {{categoriasApi}}/4
+Content-Type: application/json
+
+{ "nombre": "Ropa" }
+
+### 5d. Error esperado: ID inexistente → 404
+PUT {{categoriasApi}}/999
+Content-Type: application/json
+
+{ "nombre": "No existe" }
+
+
+# =============================================================================
+# BLOQUE 6 — Eliminar (DELETE)
+# =============================================================================
+
+### 6a. Esperado: Eliminar la categoría 4 → 204 (sin cuerpo)
+DELETE {{categoriasApi}}/4
+
+### 6b. Error esperado: Eliminarla de nuevo → 404
+DELETE {{categoriasApi}}/4
+
+### 6c. Esperado: Estado final → 200
+GET {{categoriasApi}}
+
+
+# =============================================================================
+# BLOQUE 7 — Cierre de sesión
+# =============================================================================
+
+### 7a. Esperado: Logout → 200 (borra la cookie)
+POST {{authApi}}/logout
+
+### 7b. Error esperado: Eliminar sin sesión → 401
+DELETE {{categoriasApi}}/1
