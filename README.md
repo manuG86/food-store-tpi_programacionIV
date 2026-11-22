@@ -71,5 +71,5 @@ Las pruebas del backend se ejecutan con `python -m pytest -q` desde `backend/`, 
 
 ## Enlaces de entrega
 
-- Repositorio público de GitHub: pendiente de publicación.
-- Video de demostración: pendiente de grabación y publicación.
+- [Repositorio público de GitHub](https://github.com/manuG86/food-store-tpi_programacionIV)
+- [Video de demostración](https://youtu.be/gmzJLQ0Kaak)
